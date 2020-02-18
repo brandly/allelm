@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "async-promise-pool": "1.0.3",
+    "axios": "0.19.2",
+    "mkdirp": "1.0.3",
+    "ngraph.graph": "19.0.3",
+    "ngraph.offline.layout": "1.1.1",
+    "ngraph.tobinary": "1.0.2"
+  }
+}
