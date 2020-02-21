@@ -1,5 +1,5 @@
 const fs = require('fs')
-var createGraph = require('ngraph.graph')
+const createGraph = require('ngraph.graph')
 
 // STDIN_FILENO = 0
 const stdinBuffer = fs.readFileSync(0)
@@ -26,19 +26,20 @@ const readJson = p => {
 }
 
 ;(async function() {
-  var graph = createGraph()
+  const graph = createGraph()
 
-  const lookup = {}
+  const packageLookup = {}
   const insert = (path, pkg) => {
     if (`./packages/${pkg.name}@${pkg.version}.json` !== path) {
       console.log('package doesnt match path:', path)
+      console.log(pkg)
       return
     }
-    if (!(pkg.name in lookup)) {
-      lookup[pkg.name] = {}
+    if (!(pkg.name in packageLookup)) {
+      packageLookup[pkg.name] = {}
     }
 
-    lookup[pkg.name][pkg.version] = pkg
+    packageLookup[pkg.name][pkg.version] = pkg
     graph.addNode(pkgName(pkg), pkg)
   }
 
@@ -50,25 +51,29 @@ const readJson = p => {
   for (let i = 0; i < filePaths.length; i++) {
     let [name, version] = parseFilePath(filePaths[i])
 
-    if (!(name in lookup) || !(version in lookup[name])) {
+    if (!(name in packageLookup) || !(version in packageLookup[name])) {
       // no package found
       continue
     }
 
     // create a node for each
     // console.log(`${name}@${version}`)
-    const deps = lookup[name][version].dependencies
-    for (let key in deps) {
-      const isMatchingVersion = parseRange(deps[key])
-      const depVersion = Object.keys(lookup[key]).find(isMatchingVersion)
+    const deps = packageLookup[name][version].dependencies
+    for (let dep in deps) {
+      const isMatchingVersion = parseRange(deps[dep])
+      if (!(dep in packageLookup)) {
+        console.log('Unknown dep:', dep, deps[dep], '\nfor:', name, version)
+        continue
+      }
+      const depVersion = Object.keys(packageLookup[dep]).find(isMatchingVersion)
       if (!depVersion) {
         console.log(`${name}@${version}`)
-        console.log('no matching version:', key, deps[key])
+        console.log('no matching version:', dep, deps[dep])
         continue
       }
       graph.addLink(
         pkgName({ name, version }),
-        pkgName({ name: key, version: depVersion })
+        pkgName({ name: dep, version: depVersion })
       )
       // console.log(`  ${key}@${depVersion}`)
     }
