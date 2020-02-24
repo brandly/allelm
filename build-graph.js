@@ -1,13 +1,11 @@
 const fs = require('fs')
 const createGraph = require('ngraph.graph')
 
-// STDIN_FILENO = 0
-const stdinBuffer = fs.readFileSync(0)
-
-const filePaths = stdinBuffer
+const filePaths = fs
+  .readFileSync(0)
   .toString()
+  .trim()
   .split('\n')
-  .filter(Boolean)
 
 const readJson = p => {
   return new Promise((resolve, reject) => {
