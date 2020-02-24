@@ -2,6 +2,7 @@ const fs = require('fs')
 const axios = require('axios')
 const mkdirp = require('mkdirp')
 const PromisePool = require('async-promise-pool')
+const Versions = require('./versions')
 
 const token = process.env.TOKEN
 const dir = './packages'
@@ -15,14 +16,7 @@ setTimeout(async () => {
 
   packages.forEach(package => {
     pool.add(async () => {
-      let versions
-      try {
-        versions = await getVersions(package.name)
-      } catch (e) {
-        console.log('Error getting versions', package.name, e)
-        return
-      }
-      const majorVersions = uniqBy(versions, v => v.split('.')[0])
+      const majorVersions = uniqBy(package.versions, v => v.split('.')[0])
       for (let i = 0; i < majorVersions.length; i++) {
         await downloadPackage(package.name, majorVersions[i])
       }
@@ -32,24 +26,33 @@ setTimeout(async () => {
   await pool.all()
 })
 
-// TODO: use this url instead
-// https://package.elm-lang.org/all-packages
 const getPackageList = async () => {
-  const newRes = await axios.get('https://package.elm-lang.org/search.json')
+  const newRes = await axios.get('https://package.elm-lang.org/all-packages')
   const oldRes = await axios.get(
     'https://elm.dmy.fr/all-packages?elm-package-version=0.18'
   )
-  const newPackageNames = new Set(newRes.data.map(p => p.name))
-  const allPackages = newRes.data.concat(
-    oldRes.data.filter(({ name }) => !newPackageNames.has(name))
-  )
-  return allPackages
-}
 
-const getVersions = async name => {
-  const url = `https://package.elm-lang.org/packages/${name}/releases.json`
-  const res = await axios.get(url)
-  return Object.keys(res.data)
+  const nameToVersions = newRes.data
+  const newPackageNames = new Set(Object.keys(newRes.data))
+  const allPackages = Array.from(newPackageNames)
+    .map(name => ({ name, versions: nameToVersions[name] }))
+    .concat(oldRes.data.filter(({ name }) => !newPackageNames.has(name)))
+    .map(pkg => ({
+      ...pkg,
+      versions: pkg.versions.sort((a, b) => {
+        switch (Versions.compare(a, b)) {
+          case 'gt':
+            return 1
+          case 'lt':
+            return -1
+          case 'eq':
+            return 0
+          default:
+            throw new Error(`Unexpected compare value: ${a}, ${b}`)
+        }
+      })
+    }))
+  return allPackages
 }
 
 const downloadPackage = async (name, version) => {
