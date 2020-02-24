@@ -33,6 +33,14 @@ const getVersions = async name => {
 
 const downloadPackage = async (name, version) => {
   try {
+    const existing = await readJson(`${dir}/${name}@${version}.json`)
+    return // already have it
+  } catch (e) {
+    if (e.code !== 'ENOENT') {
+      throw e
+    }
+  }
+  try {
     const elmJson = await getFileAtVersion(name, 'elm.json', version)
     writeFile(name, version, elmJson)
   } catch (e) {
@@ -104,3 +112,19 @@ const respectfulGET = async url => {
 }
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+const readJson = p => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(p, 'utf-8', (e, contents) => {
+      if (e) {
+        return reject(e)
+      }
+
+      try {
+        resolve(JSON.parse(contents))
+      } catch (e) {
+        reject(e)
+      }
+    })
+  })
+}
