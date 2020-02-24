@@ -6,24 +6,45 @@ const PromisePool = require('async-promise-pool')
 const token = process.env.TOKEN
 const dir = './packages'
 
-;(async () => {
-  const { data } = await axios.get('https://package.elm-lang.org/search.json')
-  mkdirp.sync(dir)
+setTimeout(async () => {
+  const packages = await getPackageList()
+  console.log(`Downloading ${packages.length} packages`)
 
   const pool = new PromisePool({ concurrency: 5 })
+  mkdirp.sync(dir)
 
-  for (let i = 0; i < data.length; i++) {
-    const { name } = data[i]
-    const versions = await getVersions(name)
-    const majorVersions = uniqBy(versions, v => v.split('.')[0])
-
-    majorVersions.forEach(version => {
-      pool.add(() => downloadPackage(name, version))
+  packages.forEach(package => {
+    pool.add(async () => {
+      let versions
+      try {
+        versions = await getVersions(package.name)
+      } catch (e) {
+        console.log('Error getting versions', package.name, e)
+        return
+      }
+      const majorVersions = uniqBy(versions, v => v.split('.')[0])
+      for (let i = 0; i < majorVersions.length; i++) {
+        await downloadPackage(package.name, majorVersions[i])
+      }
     })
-  }
+  })
 
   await pool.all()
-})()
+})
+
+// TODO: use this url instead
+// https://package.elm-lang.org/all-packages
+const getPackageList = async () => {
+  const newRes = await axios.get('https://package.elm-lang.org/search.json')
+  const oldRes = await axios.get(
+    'https://elm.dmy.fr/all-packages?elm-package-version=0.18'
+  )
+  const newPackageNames = new Set(newRes.data.map(p => p.name))
+  const allPackages = newRes.data.concat(
+    oldRes.data.filter(({ name }) => !newPackageNames.has(name))
+  )
+  return allPackages
+}
 
 const getVersions = async name => {
   const url = `https://package.elm-lang.org/packages/${name}/releases.json`
