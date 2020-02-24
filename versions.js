@@ -1,3 +1,5 @@
+const assert = require('assert')
+
 const parseRange = range => {
   // 1.0.0 <= v < 2.0.0
   const splits = range
@@ -28,6 +30,12 @@ const gte = (a, b) => {
 }
 const lt = (a, b) => compare(a, b) === 'lt'
 const compare = (a, b) => {
+  if (typeof a === 'string') {
+    a = parseVersion(a)
+  }
+  if (typeof b === 'string') {
+    b = parseVersion(b)
+  }
   if (!a.length || !b.length) {
     return 'eq'
   }
@@ -40,6 +48,8 @@ const compare = (a, b) => {
     return 'gt'
   }
 }
+
+assert.equal(compare('1.0.10', '1.0.9'), 'gt')
 
 module.exports = {
   parseRange,
