@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "async-promise-pool": "1.0.3",
-    "axios": "0.21.1",
+    "axios": "0.21.2",
     "mkdirp": "1.0.3",
     "ngraph.graph": "19.0.3",
     "ngraph.offline.layout": "1.1.1",
