@@ -14,9 +14,9 @@ setTimeout(async () => {
   const pool = new PromisePool({ concurrency: 5 })
   mkdirp.sync(dir)
 
-  packages.forEach(package => {
+  packages.forEach((package) => {
     pool.add(async () => {
-      const majorVersions = uniqBy(package.versions, v => v.split('.')[0])
+      const majorVersions = uniqBy(package.versions, (v) => v.split('.')[0])
       for (let i = 0; i < majorVersions.length; i++) {
         await downloadPackage(package.name, majorVersions[i])
       }
@@ -35,9 +35,9 @@ const getPackageList = async () => {
   const nameToVersions = newRes.data
   const newPackageNames = new Set(Object.keys(newRes.data))
   const allPackages = Array.from(newPackageNames)
-    .map(name => ({ name, versions: nameToVersions[name] }))
+    .map((name) => ({ name, versions: nameToVersions[name] }))
     .concat(oldRes.data.filter(({ name }) => !newPackageNames.has(name)))
-    .map(pkg => ({
+    .map((pkg) => ({
       ...pkg,
       versions: pkg.versions.sort((a, b) => {
         switch (Versions.compare(a, b)) {
@@ -50,7 +50,7 @@ const getPackageList = async () => {
           default:
             throw new Error(`Unexpected compare value: ${a}, ${b}`)
         }
-      })
+      }),
     }))
   return allPackages
 }
@@ -100,8 +100,8 @@ const writeFile = (name, version, elmJson) => {
 }
 
 const getFileAtVersion = async (repo, filename, version) => {
-  const url = `https://api.github.com/repos/${repo}/contents/${filename}?ref=${version}&access_token=${token}`
-  const res = await respectfulGET(url)
+  const url = `https://api.github.com/repos/${repo}/contents/${filename}?ref=${version}`
+  const res = await respectfulGET(url, { Authorization: `token ${token}` })
   return Buffer.from(res.data.content, 'base64').toString('utf-8')
 }
 
@@ -115,9 +115,9 @@ const uniqBy = (list, by) => {
   return Object.values(obj)
 }
 
-const respectfulGET = async url => {
+const respectfulGET = async (url, headers) => {
   try {
-    return await axios.get(url)
+    return await axios.get(url, { headers })
   } catch (e) {
     if (
       e.response &&
@@ -128,16 +128,16 @@ const respectfulGET = async url => {
       // rate limit!
       console.log('sleep!')
       await sleep(30 * 1000)
-      return await respectfulGET(url)
+      return await respectfulGET(url, headers)
     } else {
       throw e
     }
   }
 }
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-const readJson = p => {
+const readJson = (p) => {
   return new Promise((resolve, reject) => {
     fs.readFile(p, 'utf-8', (e, contents) => {
       if (e) {
