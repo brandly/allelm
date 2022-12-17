@@ -2,13 +2,9 @@ const fs = require('fs')
 const createGraph = require('ngraph.graph')
 const Versions = require('./versions')
 
-const filePaths = fs
-  .readFileSync(0)
-  .toString()
-  .trim()
-  .split('\n')
+const filePaths = fs.readFileSync(0).toString().trim().split('\n')
 
-const readJson = p => {
+const readJson = (p) => {
   return new Promise((resolve, reject) => {
     fs.readFile(p, 'utf-8', (e, contents) => {
       if (e) {
@@ -24,7 +20,7 @@ const readJson = p => {
   })
 }
 
-;(async function() {
+;(async function () {
   const graph = createGraph()
 
   const packageLookup = {}
@@ -32,16 +28,12 @@ const readJson = p => {
     let [name, version] = parseFilePath(path)
     if (pkg.name !== name) {
       console.log(
-        `package name doesn't match: Published as ${name}@${version}, elm.json says ${
-          pkg.name
-        }`
+        `package name doesn't match: Published as ${name}@${version}, elm.json says ${pkg.name}`
       )
     }
     if (pkg.version !== version) {
       console.log(
-        `package version doesn't match: Published as ${name}@${version}, elm.json says ${
-          pkg.version
-        }`
+        `package version doesn't match: Published as ${name}@${version}, elm.json says ${pkg.version}`
       )
     }
     if (!(name in packageLookup)) {
@@ -106,7 +98,7 @@ const readJson = p => {
 
   const save = require('ngraph.tobinary')
   save(graph, {
-    outDir: './data'
+    outDir: './data',
   })
 
   console.log('Done.')
@@ -115,10 +107,10 @@ const readJson = p => {
   )
 })()
 
-const pkgName = pkg => `${pkg.name}@${pkg.version}`
+const pkgName = (pkg) => `${pkg.name}@${pkg.version}`
 
-const parseFilePath = path =>
+const parseFilePath = (path) =>
   path
-    .replace(/^\.\/all-packages\//, '')
+    .replace(/^\.\/packages\//, '')
     .replace(/\.json$/, '')
     .split('@')
