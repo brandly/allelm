@@ -41,6 +41,7 @@ const readJson = (p) => {
     }
 
     packageLookup[name][version] = pkg
+    console.log('add node!', pkgName({ name, version }))
     graph.addNode(pkgName({ name, version }), pkg)
   }
 
@@ -74,6 +75,12 @@ const readJson = (p) => {
         console.log('available:', Object.keys(packageLookup[dep]).join(', '))
         continue
       }
+      console.log(
+        'add link!',
+        pkgName({ name, version }),
+        '->',
+        pkgName({ name: dep, version: depVersion })
+      )
       graph.addLink(
         pkgName({ name, version }),
         pkgName({ name: dep, version: depVersion })

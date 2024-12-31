@@ -11,7 +11,7 @@ setTimeout(async () => {
   const packages = await getPackageList()
   console.log(`Downloading ${packages.length} packages`)
 
-  const pool = new PromisePool({ concurrency: 5 })
+  const pool = new PromisePool({ concurrency: 10 })
   mkdirp.sync(dir)
 
   packages.forEach((package) => {
@@ -27,10 +27,10 @@ setTimeout(async () => {
 })
 
 const getPackageList = async () => {
-  const newRes = await axios.get('https://package.elm-lang.org/all-packages')
-  const oldRes = await axios.get(
-    'https://elm.dmy.fr/all-packages?elm-package-version=0.18'
-  )
+  const [newRes, oldRes] = await Promise.all([
+    axios.get('https://package.elm-lang.org/all-packages'),
+    axios.get('https://elm.dmy.fr/all-packages?elm-package-version=0.18'),
+  ])
 
   const nameToVersions = newRes.data
   const newPackageNames = new Set(Object.keys(newRes.data))
@@ -126,6 +126,9 @@ const respectfulGET = async (url, headers) => {
         e.response.data.message.includes('rate limit'))
     ) {
       // rate limit!
+      // TODO: could check /rate_limit to know how long to sleep
+      // https://docs.github.com/en/rest/rate-limit?apiVersion=2022-11-28
+      // maybe this response even includes the timestamp
       console.log('sleep!')
       await sleep(30 * 1000)
       return await respectfulGET(url, headers)
